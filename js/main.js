@@ -76,13 +76,19 @@ var App = React.createClass({
     var selected = decks.filter(deck => deck.id == id)[0];
     this.setState({selected: selected});
   },
+  deleteCard: function(id, e) {
+    var filteredCards = this.state.selected.cards.filter(card => card.id != id);
+    var newDeck = this.state.selected;
+    newDeck.cards = filteredCards;
+    this.setState({selected: newDeck});
+  },
   render: function() {
     var selectedName
     return (
       <div>
       <header id="main-header"><h1>React Flip Cards {this.state.selected? '» '+ this.state.selected.title: ''}</h1></header>
       <DecksList decks={decks} clickHandle={this.handleSelect} />
-      <DeckStage cards={this.state.selected ? this.state.selected.cards: undefined}/>
+      <DeckStage cards={this.state.selected ? this.state.selected.cards: undefined} handleDelete={this.deleteCard}/>
       </div>
     );
   }
@@ -90,12 +96,24 @@ var App = React.createClass({
 
 // decks List
 var DecksList = React.createClass({
+  getInitialState: function() {
+    return {
+      selected: undefined
+    };
+  },
   handleSelect: function(id, e) {
     this.props.clickHandle(id, e);
+    this.setState({selected: id});
   },
   render: function() {
     var self = this;
-    var decks = this.props.decks.map(deck => <Deck title={deck.title} key={deck.id} id={deck.id} clickHandle={self.handleSelect} />);
+    var decks = this.props.decks.map(function(deck) {
+      return <Deck
+      isSelected={self.state.selected == deck.id}
+      title={deck.title}
+      key={deck.id}
+      id={deck.id}
+      clickHandle={self.handleSelect} />});
 
     return (
       <div id="decks-list">
@@ -113,8 +131,9 @@ var Deck = React.createClass({
     this.props.clickHandle(id, e);
   },
   render: function() {
+    var deckClasses = classNames({'deck': true, 'selected': this.props.isSelected})
     return (
-      <div className="deck">
+      <div className={deckClasses}>
         <a href="#" className="deck-title" onClick={this.titleClick.bind(this, this.props.id)}>{this.props.title}</a>
       </div>
     );
@@ -123,6 +142,9 @@ var Deck = React.createClass({
 
 // deck stage for display
 var DeckStage = React.createClass({
+  handleDelete: function(id, e) {
+    this.props.handleDelete(id, e);
+  },
   render: function() {
     if(!this.props.cards) {
       return (
@@ -142,8 +164,9 @@ var DeckStage = React.createClass({
 
     var cards = this.props.cards.map(card =>
       <Card key={card.id}
+      id={card.id}
       front={card.front}
-      back={card.back} />);
+      back={card.back} handleDelete={this.handleDelete} />);
 
     return (
       <div id="deck-stage">
@@ -156,15 +179,22 @@ var DeckStage = React.createClass({
 // deck cards for deck display
 var Card = React.createClass({
   getInitialState: function() {
-    return ({flipped: false});
+    return ({flipped: false, gone: false});
   },
   flipCard: function(e) {
     var nextState = !this.state.flipped
     this.setState({flipped: nextState});
   },
+  deleteCard: function(id, e) {
+    this.setState({gone: true});
+    this.props.handleDelete(id, e);
+  },
   render: function() {
-    var cardClasses = classNames({'card':true, 'flipped': this.state.flipped});
-    var cardActions = <div className="card-actions">
+    var cardClasses = classNames({'card':true, 'flipped': this.state.flipped, 'gone': this.state.gone});
+    var cardActionsTop = <div className="card-actions card-actions-top">
+      <span className="card-action" onClick={this.deleteCard.bind(this, this.props.id)} >Delete ╳</span>
+    </div>;
+    var cardActionsBottom = <div className="card-actions card-actions-bottom">
       <span className="card-action" onClick={this.flipCard}>
         ↪ Flip Card
       </span>
@@ -172,16 +202,18 @@ var Card = React.createClass({
     return (
       <div className={cardClasses}>
         <div className="card-front">
+          {cardActionsTop}
           <div className="card-content">
             {this.props.front}
           </div>
-          {cardActions}
+          {cardActionsBottom}
         </div>
         <div className="card-back">
+          {cardActionsTop}
           <div className="card-content">
             {this.props.back}
           </div>
-          {cardActions}
+          {cardActionsBottom}
         </div>
       </div>
     );
