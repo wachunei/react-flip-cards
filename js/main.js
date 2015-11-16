@@ -76,6 +76,12 @@ var App = React.createClass({
     var selected = decks.filter(deck => deck.id == id)[0];
     this.setState({selected: selected});
   },
+  handleNewDeck: function(title) {
+    var maxId = Math.max.apply(Math,decks.map(function(deck){return deck.id;}))
+    var newDeck = {title:title, id: maxId+1, cards: []};
+    decks.push(newDeck);
+    this.setState({selected: newDeck});
+  },
   deleteCard: function(id, e) {
     var filteredCards = this.state.selected.cards.filter(card => card.id != id);
     var newDeck = this.state.selected;
@@ -87,7 +93,7 @@ var App = React.createClass({
     return (
       <div>
       <header id="main-header"><h1>React Flip Cards {this.state.selected? '» '+ this.state.selected.title: ''}</h1></header>
-      <DecksList decks={decks} clickHandle={this.handleSelect} />
+      <DecksList decks={decks} clickHandle={this.handleSelect} handleNewDeck={this.handleNewDeck} selectedDeck={this.state.selected? this.state.selected.id : null} />
       <DeckStage cards={this.state.selected ? this.state.selected.cards: undefined} handleDelete={this.deleteCard}/>
       </div>
     );
@@ -96,20 +102,17 @@ var App = React.createClass({
 
 // decks List
 var DecksList = React.createClass({
-  getInitialState: function() {
-    return {
-      selected: undefined
-    };
-  },
   handleSelect: function(id, e) {
     this.props.clickHandle(id, e);
-    this.setState({selected: id});
+  },
+  handleSubmit: function(title) {
+    this.props.handleNewDeck(title);
   },
   render: function() {
     var self = this;
     var decks = this.props.decks.map(function(deck) {
       return <Deck
-      isSelected={self.state.selected == deck.id}
+      isSelected={self.props.selectedDeck == deck.id}
       title={deck.title}
       key={deck.id}
       id={deck.id}
@@ -117,11 +120,31 @@ var DecksList = React.createClass({
 
     return (
       <div id="decks-list">
+        <DecksListForm onSubmit={this.handleSubmit}/>
+        <h3>Decks</h3>
         {decks}
       </div>
     );
   },
+});
 
+var DecksListForm = React.createClass({
+  handleSubmit: function(e) {
+    e.preventDefault();
+    var title = this.refs.title.value.trim();
+    if(title == ''){
+      return;
+    }
+    this.props.onSubmit(title);
+    this.refs.title.value = '';
+  },
+  render: function() {
+    return <form onSubmit={this.handleSubmit}>
+      <h3>Create New Deck</h3>
+      <input type="text" ref="deckTitle" ref="title"/>
+      <input type="submit" value="Create" />
+    </form>;
+  }
 });
 
 // deck for list display
