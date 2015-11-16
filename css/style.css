@@ -180,6 +180,24 @@ body {
   text-align: right;
 }
 
+#deck-stage .new-card-form {
+  padding: 10px 20px;
+  border: 1px solid #eee;
+}
+
+#deck-stage .new-card-form h3 {
+  display: inline;
+  margin-right: 20px;
+}
+
+
+#deck-stage .new-card-form input {
+  margin: 5px 10px;
+}
+#deck-stage .new-card-form input[type=text] {
+  width: 25%;
+}
+
 input {
   border: 1px solid #aaa;
   padding: 5px;

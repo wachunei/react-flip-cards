@@ -88,13 +88,20 @@ var App = React.createClass({
     newDeck.cards = filteredCards;
     this.setState({selected: newDeck});
   },
+  newCard: function(question, answer) {
+    var selected = this.state.selected;
+    var maxCardId = selected.cards.length > 0 ? Math.max.apply(Math,selected.cards.map(function(card){return card.id;})): 1;
+    var newCard = {front: question, back: answer, id: maxCardId+1};
+    selected.cards.push(newCard);
+    this.setState({selected: selected});
+  },
   render: function() {
     var selectedName
     return (
       <div>
       <header id="main-header"><h1>React Flip Cards {this.state.selected? '» '+ this.state.selected.title: ''}</h1></header>
       <DecksList decks={decks} clickHandle={this.handleSelect} handleNewDeck={this.handleNewDeck} selectedDeck={this.state.selected? this.state.selected.id : null} />
-      <DeckStage cards={this.state.selected ? this.state.selected.cards: undefined} handleDelete={this.deleteCard}/>
+      <DeckStage cards={this.state.selected ? this.state.selected.cards: undefined} handleDelete={this.deleteCard} handleNewCard={this.newCard}/>
       </div>
     );
   }
@@ -141,7 +148,7 @@ var DecksListForm = React.createClass({
   render: function() {
     return <form onSubmit={this.handleSubmit}>
       <h3>Create New Deck</h3>
-      <input type="text" ref="deckTitle" ref="title"/>
+      <input type="text" ref="deckTitle" placeholder="New Deck Title" ref="title"/>
       <input type="submit" value="Create" />
     </form>;
   }
@@ -168,6 +175,9 @@ var DeckStage = React.createClass({
   handleDelete: function(id, e) {
     this.props.handleDelete(id, e);
   },
+  handleNewCard: function(question, answer) {
+    this.props.handleNewCard(question, answer);
+  },
   render: function() {
     if(!this.props.cards) {
       return (
@@ -177,9 +187,12 @@ var DeckStage = React.createClass({
       );
     }
 
+    var deckStageForm = <DeckStageForm onSubmit={this.handleNewCard}/>
+
     if(this.props.cards.length == 0) {
       return (
         <div id="deck-stage">
+          {deckStageForm}
           <span className="alert-message">This deck has no cards</span>
         </div>
       );
@@ -193,9 +206,37 @@ var DeckStage = React.createClass({
 
     return (
       <div id="deck-stage">
+      {deckStageForm}
        <div className="cards-container">{cards}</div>
       </div>
     );
+  }
+});
+
+var DeckStageForm = React.createClass({
+  handleNewCard: function(e) {
+    e.preventDefault();
+    var question = this.refs.question.value.trim();
+    var answer = this.refs.answer.value.trim();
+    if(question == '' || answer ==  '') {
+      return;
+    }
+    this.props.onSubmit(question, answer);
+    this.refs.question.value = this.refs.answer.value = '';
+  },
+  render: function() {
+    return <form className="new-card-form" onSubmit={this.handleNewCard}>
+      <h3>Add Card</h3>
+      <label>
+      Question:
+      <input type="text" ref="question" />
+      </label>
+        <label>
+        Answer:
+        <input type="text" ref="answer"/>
+        </label>
+      <input type="submit" />
+    </form>
   }
 });
 
